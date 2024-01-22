@@ -2,7 +2,7 @@
  * @name duccw-twitch-embed
  * @author dwuuup
  * @description Watch duccW's twitch stream on discord through an embeded window
- * @version 1.1
+ * @version 1.2
  */
 
 module.exports = class MyPlugin {
@@ -53,7 +53,7 @@ module.exports = class MyPlugin {
     element.style.height = '52px';
     element.style.bottom = '10px';
     element.style.right = '10px';
-    element.style.borderRadius = '26x';
+    element.style.borderRadius = '26px';
     element.style.alignItems = 'center';
     element.style.justifyContent = 'center';
     element.style.backgroundColor = '#1B8748';
@@ -100,6 +100,10 @@ module.exports = class MyPlugin {
     container.style.overflow = 'hidden';
     container.style.zIndex = '100';
     container.style.backgroundColor = '#000000';
+    /*
+    transform: scale(0.6);
+  transition: opacity 250ms 250ms ease, transform 300ms 
+    */
     
     const minimize = document.createElement('button');
     minimize.style.width = '40px';
@@ -202,6 +206,29 @@ module.exports = class MyPlugin {
 
     container.append(header);
     container.append(twitchEmbed);
+
+    const popUpStyle = document.createElement('style');
+
+    popUpStyle.textContent = `
+      @keyframes popUpAnimation {
+        0% {
+          transform: scale(0.8);
+        }
+        60% {
+          transform: scale(1.05);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .pop-up {
+        animation: popUpAnimation 300ms ease-in-out;
+      }
+    `;
+
+    root.appendChild(popUpStyle);
+    container.classList.add('pop-up');
 
     root.append(container);
   }
