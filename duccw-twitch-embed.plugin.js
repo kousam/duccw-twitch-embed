@@ -100,10 +100,6 @@ module.exports = class MyPlugin {
     container.style.overflow = 'hidden';
     container.style.zIndex = '100';
     container.style.backgroundColor = '#000000';
-    /*
-    transform: scale(0.6);
-  transition: opacity 250ms 250ms ease, transform 300ms 
-    */
     
     const minimize = document.createElement('button');
     minimize.style.width = '40px';
@@ -215,7 +211,7 @@ module.exports = class MyPlugin {
           transform: scale(0.8);
         }
         60% {
-          transform: scale(1.05);
+          transform: scale(1.02);
         }
         100% {
           transform: scale(1);
