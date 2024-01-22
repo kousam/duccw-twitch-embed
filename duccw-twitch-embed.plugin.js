@@ -100,6 +100,12 @@ module.exports = class MyPlugin {
     container.style.overflow = 'hidden';
     container.style.zIndex = '100';
     container.style.backgroundColor = '#000000';
+    container.style.resize = 'both';
+    container.style.minWidth = '320px';
+    container.style.minHeight = '200px';
+
+    container.style.maxWidth = '100%';
+    container.style.maxHeight = '100%'
     
     const minimize = document.createElement('button');
     minimize.style.width = '40px';
@@ -204,6 +210,7 @@ module.exports = class MyPlugin {
     container.append(twitchEmbed);
 
     const popUpStyle = document.createElement('style');
+    popUpStyle.id = 'duccw-twitch-embed-animation-style';
 
     popUpStyle.textContent = `
       @keyframes popUpAnimation {
@@ -226,6 +233,15 @@ module.exports = class MyPlugin {
     root.appendChild(popUpStyle);
     container.classList.add('pop-up');
 
+    const handleResize = (e) => {
+      const rect = container.getBoundingClientRect();
+
+      twitchEmbed.width = rect.width + 'px';
+      twitchEmbed.height = rect.height - 20 + 'px';
+    }
+    
+    setTimeout(() => {new ResizeObserver(handleResize).observe(container)}, 1000);
+
     root.append(container);
   }
 
@@ -234,6 +250,20 @@ module.exports = class MyPlugin {
 
     if (element) {
       element.remove();
+    }
+  }
+
+  removeAnimationStyle() {
+    const element = document.getElementById('duccw-twitch-embed-aniamtion-style');
+
+    if (element) {
+      element.remove();
+    }
+
+    const style = document.getElementById('duccw-twitch-embed-animation-style');
+
+    if (style) {
+      style.remove();
     }
   }
 
