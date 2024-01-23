@@ -1,8 +1,8 @@
 /**
- * @name duccw-twitch-embed
+ * @name twitch-embed
  * @author dwuuup
- * @description Watch duccW's twitch stream on discord through an embeded window
- * @version 1.2
+ * @description Watch twitch stream on discord through an embeded window
+ * @version 1.3
  */
 
 module.exports = class MyPlugin {
@@ -19,6 +19,8 @@ module.exports = class MyPlugin {
     this.removeTwitchEmbed();
     this.removeOpenStreamElement();
     this.removeListeners();
+    this.removeAnimationStyle();
+    this.removeOpenAniamtionStyle();
   }
 
   // This makes listener cleanup easier
@@ -46,7 +48,7 @@ module.exports = class MyPlugin {
     const root = document.getElementById("app-mount");
 
     const element = document.createElement('button');
-    element.id = 'duccw-twitch-embed-max';
+    element.id = 'twitch-embed-max';
     element.style.position = 'absolute';
     element.style.display = 'flex';
     element.style.width = '52px';
@@ -56,29 +58,167 @@ module.exports = class MyPlugin {
     element.style.borderRadius = '26px';
     element.style.alignItems = 'center';
     element.style.justifyContent = 'center';
-    element.style.backgroundColor = '#1B8748';
+    element.style.backgroundColor = '#6441A5';
+    element.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
 
     const img = document.createElement('img');
-    img.src = 'https://static-cdn.jtvnw.net/jtv_user_pictures/9301298f-f6e6-4498-b97e-aa9c69c7fe3c-profile_image-70x70.png';
-    img.width = '40';
-    img.height = '40';
+    img.src = 'https://www.pngmart.com/files/22/Twitch-Logo-PNG-Transparent.png';
+    img.width = '34';
+    img.height = '34';
 
-    const handleStartClick = () => {
+    const openButtonAnimation = document.createElement('style');
+    openButtonAnimation.id = 'twitch-embed-open-animation-style';
+
+    openButtonAnimation.textContent = `
+      @keyframes openButtonAnimation {
+        30% {
+          transform: scale(1.06);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .open-animation {
+        animation: openButtonAnimation 400ms ease-in-out;
+      }
+
+      @keyframes userInputAnimationOut {
+        0% {
+          width: 10px;
+        }
+        100% {
+          width: 220px;
+        }
+      }
+
+      .user-animation-out {
+        animation: userInputAnimationOut 200ms ease-in-out;
+      }
+
+      @keyframes userInputAnimationIn {
+        0% {
+          width: 220px;
+        }
+        100% {
+          width: 10px;
+        }
+      }
+
+      .user-animation-in {
+        animation: userInputAnimationIn 200ms ease-in-out;
+      }
+    `;
+
+    root.append(openButtonAnimation);
+
+    const usernameContainer = document.createElement('div');
+    usernameContainer.id = 'twitch-embed-user';
+    usernameContainer.style.position = 'absolute';
+    usernameContainer.style.display = 'flex';
+    usernameContainer.style.backgroundColor = '#0B0516';
+    usernameContainer.style.borderTopLeftRadius = '26px';
+    usernameContainer.style.borderBottomLeftRadius = '26px';
+    usernameContainer.style.width = '10px';
+    usernameContainer.style.height = '48px';
+    usernameContainer.style.bottom = '12px';
+    usernameContainer.style.right = '34px';
+    usernameContainer.style.transformOrigin = 'center right';
+    usernameContainer.style.overflow = 'hidden';
+    usernameContainer.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
+
+    const usernameInput = document.createElement('input');
+    usernameInput.id = 'twitch-embed-user';
+    usernameInput.style.margin = '4px';
+    usernameInput.style.borderRadius = '22px';
+    usernameInput.style.border = '2px solid #402A6B';
+    usernameInput.style.padding = '10px';
+    usernameInput.style.backgroundColor = '#000000';
+    usernameInput.style.color = '#FFFFFF';
+    usernameInput.style.width = '160px';
+    usernameInput.style.textAlign = 'center';
+    usernameInput.style.fontSize = '16px';
+    usernameInput.placeholder = 'Channel name';
+    usernameInput.value = this.streamUser;
+
+
+    usernameContainer.append(usernameInput);
+
+    const handleOpenClick = () => {
       self.createTwitchEmbed();
+      self.removeAnimationStyle();
       element.style.visibility = 'hidden';
+      usernameContainer.style.visibility = 'hidden';
     }
 
-    element.append(img);
-    root.append(element);
+    const handleOpenHover = (e) => {
+      element.classList.add('open-animation');
+    }
 
-    this.addListener(element, 'click', handleStartClick);
+    const handleOpenUnhover = (e) => {
+      element.classList.remove('open-animation');
+    }
+
+
+    let isUsernameShow = false;
+
+    const handleUserShow = (e) => {
+      isUsernameShow = isUsernameShow === false;
+
+      if (isUsernameShow) {
+        usernameContainer.classList.add('user-animation-out');
+        usernameContainer.classList.remove('user-animation-in');
+        usernameContainer.style.width = '220px';
+
+        return;
+      }
+
+      usernameContainer.classList.remove('user-animation-out');
+      usernameContainer.classList.add('user-animation-in');
+      usernameContainer.style.width = '25px';
+    }
+
+    const handleInputChange = (e) => {
+      const regex = /([a-zA-z0-9\_\-]*)/s;
+
+      const value = e.target.value;
+
+      if (value === null) {
+        return '';
+      }
+
+      const match = value.match(regex);
+
+      this.streamUser = match !== null ? match[0]: this.streamUser;
+
+      usernameInput.value = this.streamUser;
+    }
+
+    this.addListener(element, 'mouseover', handleOpenHover);
+    this.addListener(element, 'mouseout', handleOpenUnhover);
+
+    this.addListener(element, 'click', handleOpenClick);
+    this.addListener(element, 'contextmenu', handleUserShow);
+
+    this.addListener(usernameInput, 'input', handleInputChange);
+
+    element.append(img);
+
+    root.append(usernameContainer);
+    root.append(element);
   }
 
   removeOpenStreamElement() {
-    const element = document.getElementById('duccw-twitch-embed-max');
+    const element = document.getElementById('twitch-embed-max');
 
     if (element) {
       element.remove();
+    }
+
+    const userElement = document.getElementById('twitch-embed-user');
+
+    if (userElement) {
+      userElement.remove();
     }
   }
 
@@ -88,7 +228,7 @@ module.exports = class MyPlugin {
     const root = document.getElementById("app-mount");
 
     const container = document.createElement("div");
-    container.id = 'duccw-twitch-embed-container';
+    container.id = 'twitch-embed-container';
 
     container.style.display = 'flex';
     container.style.flexDirection = 'column';
@@ -101,8 +241,10 @@ module.exports = class MyPlugin {
     container.style.zIndex = '100';
     container.style.backgroundColor = '#000000';
     container.style.resize = 'both';
-    container.style.minWidth = '320px';
-    container.style.minHeight = '200px';
+    container.style.minWidth = '322px';
+    container.style.minHeight = '202px';
+    container.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
+    container.style.border = '1px solid #111111';
 
     container.style.maxWidth = '100%';
     container.style.maxHeight = '100%'
@@ -133,11 +275,12 @@ module.exports = class MyPlugin {
     headerDrag.style.zIndex = '101';
 
     const header = document.createElement("div");
-    header.id = 'duccw-twitch-embed-header';
+    header.id = 'twitch-embed-header';
     header.style.display = 'flex';
     header.style.height = '20px';
     header.style.width = '100%';
     header.style.backgroundColor = '#000000';
+    header.style.overflow = 'hidden';
 
     var offsetX, offsetY, isDragging = false;
 
@@ -200,8 +343,11 @@ module.exports = class MyPlugin {
     const handleMinimizeClick = () => {
       self.removeTwitchEmbed()
 
-      const max = document.getElementById('duccw-twitch-embed-max');
+      const max = document.getElementById('twitch-embed-max');
       max.style.visibility = 'visible';
+
+      const user = document.getElementById('twitch-embed-user');
+      user.style.visibility = 'visible';
     }
 
     this.addListener(minimize, 'click', handleMinimizeClick);
@@ -210,7 +356,7 @@ module.exports = class MyPlugin {
     container.append(twitchEmbed);
 
     const popUpStyle = document.createElement('style');
-    popUpStyle.id = 'duccw-twitch-embed-animation-style';
+    popUpStyle.id = 'twitch-embed-animation-style';
 
     popUpStyle.textContent = `
       @keyframes popUpAnimation {
@@ -236,8 +382,8 @@ module.exports = class MyPlugin {
     const handleResize = (e) => {
       const rect = container.getBoundingClientRect();
 
-      twitchEmbed.width = rect.width + 'px';
-      twitchEmbed.height = rect.height - 20 + 'px';
+      twitchEmbed.width = rect.width - 2 + 'px';
+      twitchEmbed.height = rect.height - 22 + 'px';
     }
     
     setTimeout(() => {new ResizeObserver(handleResize).observe(container)}, 1000);
@@ -246,7 +392,7 @@ module.exports = class MyPlugin {
   }
 
   removeTwitchEmbed() {
-    const element = document.getElementById('duccw-twitch-embed-container');
+    const element = document.getElementById('twitch-embed-container');
 
     if (element) {
       element.remove();
@@ -254,13 +400,15 @@ module.exports = class MyPlugin {
   }
 
   removeAnimationStyle() {
-    const element = document.getElementById('duccw-twitch-embed-aniamtion-style');
+    const style = document.getElementById('twitch-embed-animation-style');
 
-    if (element) {
-      element.remove();
+    if (style) {
+      style.remove();
     }
+  }
 
-    const style = document.getElementById('duccw-twitch-embed-animation-style');
+  removeOpenAniamtionStyle() {
+    const style = document.getElementById('twitch-embed-open-animation-style');
 
     if (style) {
       style.remove();
