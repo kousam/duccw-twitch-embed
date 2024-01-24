@@ -384,7 +384,7 @@ module.exports = class MyPlugin {
       position: absolute;
       top: calc(100% - 380px);
       left: calc(100% - 660px);
-      background-color: #000000;
+      background-color: #00000040;
       border-radius: 10px;
       overflow: hidden;
       z-index: 100;
@@ -394,7 +394,7 @@ module.exports = class MyPlugin {
       min-width: 322px;
       min-height: 202px;
       box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
-      border: 1px solid #111111;
+      border: 1px solid #00000040;
       max-width: 100%;
       max-height: 100%;
     }
@@ -449,13 +449,12 @@ module.exports = class MyPlugin {
       cursor: grab;
       z-index: 101;
       background-size: 100% 200%;
-      background-image: linear-gradient(#000000DD, #00000000, #00000000);
+      background-image: linear-gradient(#000000CC, #00000000, #00000000);
       animation: headerAnimationHide 200ms ease-in-out;
       background-position: 0 100%;
     }
 
     #twitch-embed-header:hover {
-      background-image: linear-gradient(#000000DD, #00000000, #00000000);
       animation: headerAnimation 200ms ease-in-out;
       background-position: 0 0;
     }
