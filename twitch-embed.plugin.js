@@ -80,7 +80,6 @@ module.exports = class MyPlugin {
 
     const handleOpenClick = () => {
       self.createTwitchEmbed();
-      self.removeAnimationStyle();
       element.style.visibility = 'hidden';
       usernameContainer.style.visibility = 'hidden';
     }
