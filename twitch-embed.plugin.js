@@ -63,8 +63,8 @@ module.exports = class MyPlugin {
 
     const img = document.createElement('img');
     img.src = 'https://www.pngmart.com/files/22/Twitch-Logo-PNG-Transparent.png';
-    img.width = '34';
-    img.height = '34';
+    img.width = '30';
+    img.height = '30';
 
     const openButtonAnimation = document.createElement('style');
     openButtonAnimation.id = 'twitch-embed-open-animation-style';
@@ -87,8 +87,11 @@ module.exports = class MyPlugin {
         0% {
           width: 10px;
         }
+        70% {
+          width: 205px;
+        }
         100% {
-          width: 220px;
+          width: 200px;
         }
       }
 
@@ -98,7 +101,7 @@ module.exports = class MyPlugin {
 
       @keyframes userInputAnimationIn {
         0% {
-          width: 220px;
+          width: 200px;
         }
         100% {
           width: 10px;
@@ -120,8 +123,8 @@ module.exports = class MyPlugin {
     usernameContainer.style.borderTopLeftRadius = '26px';
     usernameContainer.style.borderBottomLeftRadius = '26px';
     usernameContainer.style.width = '10px';
-    usernameContainer.style.height = '48px';
-    usernameContainer.style.bottom = '12px';
+    usernameContainer.style.height = '40px';
+    usernameContainer.style.bottom = '15px';
     usernameContainer.style.right = '34px';
     usernameContainer.style.transformOrigin = 'center right';
     usernameContainer.style.overflow = 'hidden';
@@ -135,10 +138,10 @@ module.exports = class MyPlugin {
     usernameInput.style.padding = '10px';
     usernameInput.style.backgroundColor = '#000000';
     usernameInput.style.color = '#FFFFFF';
-    usernameInput.style.width = '160px';
+    usernameInput.style.width = '140px';
     usernameInput.style.textAlign = 'center';
     usernameInput.style.fontSize = '16px';
-    usernameInput.placeholder = 'Channel name';
+    usernameInput.placeholder = 'Channel';
     usernameInput.value = this.streamUser;
 
 
@@ -168,7 +171,7 @@ module.exports = class MyPlugin {
       if (isUsernameShow) {
         usernameContainer.classList.add('user-animation-out');
         usernameContainer.classList.remove('user-animation-in');
-        usernameContainer.style.width = '220px';
+        usernameContainer.style.width = '200px';
 
         return;
       }
