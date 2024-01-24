@@ -63,6 +63,7 @@ module.exports = class MyPlugin {
     element.id = 'twitch-embed-open';
 
     const img = document.createElement('img');
+    img.id = 'twitch-embed-open-img';
     img.src = 'https://www.pngmart.com/files/22/Twitch-Logo-PNG-Transparent.png';
     img.width = '30';
     img.height = '30';
@@ -314,6 +315,10 @@ module.exports = class MyPlugin {
 
     #twitch-embed-open:hover {
       animation: openButtonAnimation 400ms ease-in-out;
+    }
+
+    #twitch-embed-open-img {
+      padding-top: 4px;
     }
     
     #twitch-embed-user {
