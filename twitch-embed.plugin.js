@@ -2,13 +2,14 @@
  * @name twitch-embed
  * @author dwuuup
  * @description Watch twitch stream on discord through an embeded window
- * @version 1.3
+ * @version 1.4
  */
 
 module.exports = class MyPlugin {
   constructor(meta) {
     this.streamUser = 'duccw';
     this.eventListeners = [];
+    this.timeouts = {};
   }
 
   start() {
@@ -60,6 +61,7 @@ module.exports = class MyPlugin {
     element.style.justifyContent = 'center';
     element.style.backgroundColor = '#6441A5';
     element.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
+    element.style.zIndex = '21';
 
     const img = document.createElement('img');
     img.src = 'https://www.pngmart.com/files/22/Twitch-Logo-PNG-Transparent.png';
@@ -129,6 +131,7 @@ module.exports = class MyPlugin {
     usernameContainer.style.transformOrigin = 'center right';
     usernameContainer.style.overflow = 'hidden';
     usernameContainer.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
+    usernameContainer.style.zIndex = '20';
 
     const usernameInput = document.createElement('input');
     usernameInput.id = 'twitch-embed-user';
@@ -287,6 +290,68 @@ module.exports = class MyPlugin {
 
     var offsetX, offsetY, isDragging = false;
 
+    header.append(headerDrag);
+    header.append(minimize);
+
+    const twitchEmbed = document.createElement("iframe");
+    twitchEmbed.src = "https://player.twitch.tv/?channel=" + this.streamUser + "&parent=discord.com&muted=true&theme=dark";
+    twitchEmbed.height = "360px";
+    twitchEmbed.width = "640px";
+    twitchEmbed.allowFullscreen = true;
+
+    const handleMinimizeClick = () => {
+      self.removeTwitchEmbed()
+
+      const max = document.getElementById('twitch-embed-max');
+      max.style.visibility = 'visible';
+
+      const user = document.getElementById('twitch-embed-user');
+      user.style.visibility = 'visible';
+    }
+
+    this.addListener(minimize, 'click', handleMinimizeClick);
+
+    container.append(header);
+    container.append(twitchEmbed);
+
+    const twitchEmbedDragOverlay = document.createElement('div');
+    twitchEmbedDragOverlay.style.position = 'absolute';
+    twitchEmbedDragOverlay.style.top = '20px';
+    twitchEmbedDragOverlay.style.left = '0px';
+    twitchEmbedDragOverlay.style.height = "360px";
+    twitchEmbedDragOverlay.style.width = "640px";
+    twitchEmbedDragOverlay.style.display = 'none';
+
+    container.append(twitchEmbedDragOverlay);
+
+    const popUpStyle = document.createElement('style');
+    popUpStyle.id = 'twitch-embed-animation-style';
+
+    popUpStyle.textContent = `
+      @keyframes popUpAnimation {
+        0% {
+          transform: scale(0.8);
+        }
+        60% {
+          transform: scale(1.02);
+        }
+        100% {
+          transform: scale(1);
+        }
+      }
+
+      .pop-up {
+        animation: popUpAnimation 300ms ease-in-out;
+      }
+    `;
+
+    root.appendChild(popUpStyle);
+    container.classList.add('pop-up');
+
+    const handleRemoveDragOverlay = () => {
+      twitchEmbedDragOverlay.style.display = 'none';
+    }
+
     const handleHeaderPress = (e) => {
       isDragging = true;
   
@@ -321,6 +386,10 @@ module.exports = class MyPlugin {
   
         container.style.left = newX + 'px';
         container.style.top = newY + 'px';
+
+        twitchEmbedDragOverlay.style.display = 'block';
+
+        self.resetableTimeout('drag', handleRemoveDragOverlay, 500);
       }
     }
   
@@ -334,62 +403,21 @@ module.exports = class MyPlugin {
 
     this.addListener(document, 'mouseup', handleMouseUp);
 
-    header.append(headerDrag);
-    header.append(minimize);
-
-    const twitchEmbed = document.createElement("iframe");
-    twitchEmbed.src = "https://player.twitch.tv/?channel=" + this.streamUser + "&parent=discord.com&muted=true&theme=dark";
-    twitchEmbed.height = "360px";
-    twitchEmbed.width = "640px";
-    twitchEmbed.allowFullscreen = true;
-
-    const handleMinimizeClick = () => {
-      self.removeTwitchEmbed()
-
-      const max = document.getElementById('twitch-embed-max');
-      max.style.visibility = 'visible';
-
-      const user = document.getElementById('twitch-embed-user');
-      user.style.visibility = 'visible';
-    }
-
-    this.addListener(minimize, 'click', handleMinimizeClick);
-
-    container.append(header);
-    container.append(twitchEmbed);
-
-    const popUpStyle = document.createElement('style');
-    popUpStyle.id = 'twitch-embed-animation-style';
-
-    popUpStyle.textContent = `
-      @keyframes popUpAnimation {
-        0% {
-          transform: scale(0.8);
-        }
-        60% {
-          transform: scale(1.02);
-        }
-        100% {
-          transform: scale(1);
-        }
-      }
-
-      .pop-up {
-        animation: popUpAnimation 300ms ease-in-out;
-      }
-    `;
-
-    root.appendChild(popUpStyle);
-    container.classList.add('pop-up');
-
     const handleResize = (e) => {
       const rect = container.getBoundingClientRect();
 
       twitchEmbed.width = rect.width - 2 + 'px';
       twitchEmbed.height = rect.height - 22 + 'px';
+      twitchEmbedDragOverlay.style.width = twitchEmbed.width;
+      twitchEmbedDragOverlay.style.height = twitchEmbed.height;
+      twitchEmbedDragOverlay.style.display = 'block';
+
+
+      self.resetableTimeout('drag', handleRemoveDragOverlay, 500);
     }
     
     setTimeout(() => {new ResizeObserver(handleResize).observe(container)}, 1000);
+
 
     root.append(container);
   }
@@ -416,6 +444,16 @@ module.exports = class MyPlugin {
     if (style) {
       style.remove();
     }
+  }
+
+  resetableTimeout(key, func, timeMs) {
+    let previousTimeout = key in this.timeouts ? this.timeouts[key] : null;
+
+    if (previousTimeout) {
+      clearTimeout(previousTimeout)
+    }
+
+    this.timeouts[key] = setTimeout(func, timeMs);
   }
 
 };
