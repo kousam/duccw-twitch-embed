@@ -3,6 +3,7 @@
  * @author dwuuup
  * @description Watch twitch stream on discord through an embeded window
  * @version 1.4
+ * @source https://github.com/kousam/twitch-embed
  */
 
 module.exports = class MyPlugin {
@@ -13,6 +14,7 @@ module.exports = class MyPlugin {
   }
 
   start() {
+    this.createStyleElement();
     this.createOpenStreamElement();
   }
 
@@ -20,8 +22,7 @@ module.exports = class MyPlugin {
     this.removeTwitchEmbed();
     this.removeOpenStreamElement();
     this.removeListeners();
-    this.removeAnimationStyle();
-    this.removeOpenAniamtionStyle();
+    this.removeStyleElement();
   }
 
   // This makes listener cleanup easier
@@ -43,110 +44,37 @@ module.exports = class MyPlugin {
     });
   }
 
+  resetableTimeout(key, func, timeMs) {
+    let previousTimeout = key in this.timeouts ? this.timeouts[key] : null;
+
+    if (previousTimeout) {
+      clearTimeout(previousTimeout)
+    }
+
+    this.timeouts[key] = setTimeout(func, timeMs);
+  }
+
   createOpenStreamElement() {
     const self = this;
 
     const root = document.getElementById("app-mount");
 
     const element = document.createElement('button');
-    element.id = 'twitch-embed-max';
-    element.style.position = 'absolute';
-    element.style.display = 'flex';
-    element.style.width = '52px';
-    element.style.height = '52px';
-    element.style.bottom = '10px';
-    element.style.right = '10px';
-    element.style.borderRadius = '26px';
-    element.style.alignItems = 'center';
-    element.style.justifyContent = 'center';
-    element.style.backgroundColor = '#6441A5';
-    element.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
-    element.style.zIndex = '21';
+    element.id = 'twitch-embed-open';
 
     const img = document.createElement('img');
     img.src = 'https://www.pngmart.com/files/22/Twitch-Logo-PNG-Transparent.png';
     img.width = '30';
     img.height = '30';
 
-    const openButtonAnimation = document.createElement('style');
-    openButtonAnimation.id = 'twitch-embed-open-animation-style';
-
-    openButtonAnimation.textContent = `
-      @keyframes openButtonAnimation {
-        30% {
-          transform: scale(1.06);
-        }
-        100% {
-          transform: scale(1);
-        }
-      }
-
-      .open-animation {
-        animation: openButtonAnimation 400ms ease-in-out;
-      }
-
-      @keyframes userInputAnimationOut {
-        0% {
-          width: 10px;
-        }
-        70% {
-          width: 205px;
-        }
-        100% {
-          width: 200px;
-        }
-      }
-
-      .user-animation-out {
-        animation: userInputAnimationOut 200ms ease-in-out;
-      }
-
-      @keyframes userInputAnimationIn {
-        0% {
-          width: 200px;
-        }
-        100% {
-          width: 10px;
-        }
-      }
-
-      .user-animation-in {
-        animation: userInputAnimationIn 200ms ease-in-out;
-      }
-    `;
-
-    root.append(openButtonAnimation);
-
     const usernameContainer = document.createElement('div');
     usernameContainer.id = 'twitch-embed-user';
-    usernameContainer.style.position = 'absolute';
-    usernameContainer.style.display = 'flex';
-    usernameContainer.style.backgroundColor = '#0B0516';
-    usernameContainer.style.borderTopLeftRadius = '26px';
-    usernameContainer.style.borderBottomLeftRadius = '26px';
-    usernameContainer.style.width = '10px';
-    usernameContainer.style.height = '40px';
-    usernameContainer.style.bottom = '15px';
-    usernameContainer.style.right = '34px';
-    usernameContainer.style.transformOrigin = 'center right';
-    usernameContainer.style.overflow = 'hidden';
-    usernameContainer.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
-    usernameContainer.style.zIndex = '20';
+    usernameContainer.classList.add('twitch-embed-user-initial');
 
     const usernameInput = document.createElement('input');
-    usernameInput.id = 'twitch-embed-user';
-    usernameInput.style.margin = '4px';
-    usernameInput.style.borderRadius = '22px';
-    usernameInput.style.border = '2px solid #402A6B';
-    usernameInput.style.padding = '10px';
-    usernameInput.style.backgroundColor = '#000000';
-    usernameInput.style.color = '#FFFFFF';
-    usernameInput.style.width = '140px';
-    usernameInput.style.textAlign = 'center';
-    usernameInput.style.fontSize = '16px';
+    usernameInput.id = 'twitch-embed-user-input';
     usernameInput.placeholder = 'Channel';
     usernameInput.value = this.streamUser;
-
 
     usernameContainer.append(usernameInput);
 
@@ -157,14 +85,6 @@ module.exports = class MyPlugin {
       usernameContainer.style.visibility = 'hidden';
     }
 
-    const handleOpenHover = (e) => {
-      element.classList.add('open-animation');
-    }
-
-    const handleOpenUnhover = (e) => {
-      element.classList.remove('open-animation');
-    }
-
 
     let isUsernameShow = false;
 
@@ -172,16 +92,14 @@ module.exports = class MyPlugin {
       isUsernameShow = isUsernameShow === false;
 
       if (isUsernameShow) {
-        usernameContainer.classList.add('user-animation-out');
-        usernameContainer.classList.remove('user-animation-in');
-        usernameContainer.style.width = '200px';
+        usernameContainer.classList.add('twitch-embed-user-show');
+        usernameContainer.classList.remove('twitch-embed-user-hide');
+        usernameContainer.classList.remove('twitch-embed-user-initial');
 
         return;
       }
-
-      usernameContainer.classList.remove('user-animation-out');
-      usernameContainer.classList.add('user-animation-in');
-      usernameContainer.style.width = '25px';
+      usernameContainer.classList.remove('twitch-embed-user-show');
+      usernameContainer.classList.add('twitch-embed-user-hide');
     }
 
     const handleInputChange = (e) => {
@@ -200,9 +118,6 @@ module.exports = class MyPlugin {
       usernameInput.value = this.streamUser;
     }
 
-    this.addListener(element, 'mouseover', handleOpenHover);
-    this.addListener(element, 'mouseout', handleOpenUnhover);
-
     this.addListener(element, 'click', handleOpenClick);
     this.addListener(element, 'contextmenu', handleUserShow);
 
@@ -215,7 +130,7 @@ module.exports = class MyPlugin {
   }
 
   removeOpenStreamElement() {
-    const element = document.getElementById('twitch-embed-max');
+    const element = document.getElementById('twitch-embed-open');
 
     if (element) {
       element.remove();
@@ -235,117 +150,57 @@ module.exports = class MyPlugin {
 
     const container = document.createElement("div");
     container.id = 'twitch-embed-container';
-
-    container.style.display = 'flex';
-    container.style.flexDirection = 'column';
-    container.style.position = 'absolute';
-    container.style.top = 'calc(100% - 380px - 20px)';
-    container.style.left = 'calc(100% - 640px - 20px)';
-    container.style.backgroundColor = '#ffffff';
-    container.style.borderRadius = '10px';
-    container.style.overflow = 'hidden';
-    container.style.zIndex = '100';
-    container.style.backgroundColor = '#000000';
-    container.style.resize = 'both';
-    container.style.minWidth = '322px';
-    container.style.minHeight = '202px';
-    container.style.boxShadow = 'rgba(0, 0, 0, 0.35) 0px 5px 15px';
-    container.style.border = '1px solid #111111';
-
-    container.style.maxWidth = '100%';
-    container.style.maxHeight = '100%'
     
-    const minimize = document.createElement('button');
-    minimize.style.width = '40px';
-    minimize.style.height = '20px';
-    minimize.style.backgroundColor = '#000000';
-    minimize.style.fontSize = '14px';
-    minimize.style.color = '#ffffff';
-    minimize.textContent = 'x';
-
-    const handleMinimizeHover = (e) => {
-      minimize.style.backgroundColor = '#222222';
-    }
-
-    const handleMinimizeUnhover = (e) => {
-      minimize.style.backgroundColor = '#000000';
-    }
-
-    this.addListener(minimize, 'mouseover', handleMinimizeHover);
-    this.addListener(minimize, 'mouseout', handleMinimizeUnhover);
-
-    const headerDrag = document.createElement("div");
-    headerDrag.style.height = '20px';
-    headerDrag.style.width = 'calc(100% - 40px)';
-    headerDrag.style.cursor = 'grab';
-    headerDrag.style.zIndex = '101';
+    const closeButton = document.createElement('button');
+    closeButton.id = 'twitch-embed-close';
+    closeButton.textContent = 'x';
+    closeButton.style.visibility = 'hidden';
 
     const header = document.createElement("div");
     header.id = 'twitch-embed-header';
-    header.style.display = 'flex';
-    header.style.height = '20px';
-    header.style.width = '100%';
-    header.style.backgroundColor = '#000000';
-    header.style.overflow = 'hidden';
+
+    const handleHeaderHover = (e) => {
+      closeButton.style.visibility = 'visible';
+    }
+
+    const handleHeaderUnHover = (e) => {
+      closeButton.style.visibility = 'hidden';
+    }
+
+    this.addListener(header, 'mouseover', handleHeaderHover);
+    this.addListener(header, 'mouseout', handleHeaderUnHover);
 
     var offsetX, offsetY, isDragging = false;
 
-    header.append(headerDrag);
-    header.append(minimize);
+    header.append(closeButton);
 
     const twitchEmbed = document.createElement("iframe");
+    twitchEmbed.id = 'twitch-embed';
     twitchEmbed.src = "https://player.twitch.tv/?channel=" + this.streamUser + "&parent=discord.com&muted=true&theme=dark";
     twitchEmbed.height = "360px";
     twitchEmbed.width = "640px";
-    twitchEmbed.allowFullscreen = true;
+    twitchEmbed.allowFullscreen = false;
 
     const handleMinimizeClick = () => {
       self.removeTwitchEmbed()
 
-      const max = document.getElementById('twitch-embed-max');
-      max.style.visibility = 'visible';
+      const openElement = document.getElementById('twitch-embed-open');
+      openElement.style.visibility = 'visible';
 
       const user = document.getElementById('twitch-embed-user');
       user.style.visibility = 'visible';
     }
 
-    this.addListener(minimize, 'click', handleMinimizeClick);
+    this.addListener(closeButton, 'click', handleMinimizeClick);
 
-    container.append(header);
     container.append(twitchEmbed);
+    container.append(header);
 
     const twitchEmbedDragOverlay = document.createElement('div');
-    twitchEmbedDragOverlay.style.position = 'absolute';
-    twitchEmbedDragOverlay.style.top = '20px';
-    twitchEmbedDragOverlay.style.left = '0px';
-    twitchEmbedDragOverlay.style.height = "360px";
-    twitchEmbedDragOverlay.style.width = "640px";
-    twitchEmbedDragOverlay.style.display = 'none';
+    twitchEmbedDragOverlay.id = 'twitch-embed-drag-overlay';
 
     container.append(twitchEmbedDragOverlay);
 
-    const popUpStyle = document.createElement('style');
-    popUpStyle.id = 'twitch-embed-animation-style';
-
-    popUpStyle.textContent = `
-      @keyframes popUpAnimation {
-        0% {
-          transform: scale(0.8);
-        }
-        60% {
-          transform: scale(1.02);
-        }
-        100% {
-          transform: scale(1);
-        }
-      }
-
-      .pop-up {
-        animation: popUpAnimation 300ms ease-in-out;
-      }
-    `;
-
-    root.appendChild(popUpStyle);
     container.classList.add('pop-up');
 
     const handleRemoveDragOverlay = () => {
@@ -358,10 +213,11 @@ module.exports = class MyPlugin {
       offsetX = e.clientX - container.getBoundingClientRect().left;
       offsetY = e.clientY - container.getBoundingClientRect().top;
 
-      headerDrag.style.cursor = 'grabbing';
+      header.classList.remove('twitch-embed-header-drag-false');
+      header.classList.add('twitch-embed-header-drag-true');
     }
 
-    this.addListener(headerDrag, 'mousedown', handleHeaderPress);
+    this.addListener(header, 'mousedown', handleHeaderPress);
 
     const handleMouseMove = (e) => {
       if (isDragging) {
@@ -380,8 +236,8 @@ module.exports = class MyPlugin {
           newX = root.getBoundingClientRect().width - container.getBoundingClientRect().width
         }
 
-        if (newY > root.getBoundingClientRect().height - 20) {
-          newY = root.getBoundingClientRect().height - 20;
+        if (newY > root.getBoundingClientRect().height - container.getBoundingClientRect().height) {
+          newY = root.getBoundingClientRect().height - container.getBoundingClientRect().height;
         }
   
         container.style.left = newX + 'px';
@@ -398,7 +254,8 @@ module.exports = class MyPlugin {
     const handleMouseUp = (e) => {
       isDragging = false;
   
-      headerDrag.style.cursor = 'grab';
+      header.classList.add('twitch-embed-header-drag-false');
+      header.classList.remove('twitch-embed-header-drag-true');
     }
 
     this.addListener(document, 'mouseup', handleMouseUp);
@@ -407,7 +264,7 @@ module.exports = class MyPlugin {
       const rect = container.getBoundingClientRect();
 
       twitchEmbed.width = rect.width - 2 + 'px';
-      twitchEmbed.height = rect.height - 22 + 'px';
+      twitchEmbed.height = rect.height - 2 + 'px';
       twitchEmbedDragOverlay.style.width = twitchEmbed.width;
       twitchEmbedDragOverlay.style.height = twitchEmbed.height;
       twitchEmbedDragOverlay.style.display = 'block';
@@ -430,30 +287,227 @@ module.exports = class MyPlugin {
     }
   }
 
-  removeAnimationStyle() {
-    const style = document.getElementById('twitch-embed-animation-style');
-
-    if (style) {
-      style.remove();
+  createStyleElement() {
+    const style = `
+    @keyframes openButtonAnimation {
+      30% {
+        transform: scale(1.06);
+      }
+      100% {
+        transform: scale(1);
+      }
     }
+
+    #twitch-embed-open {
+      position: absolute;
+      displat: flex;
+      width: 52px;
+      height: 52px;
+      bottom: 10px;
+      right: 10px;
+      border-radius: 26px;
+      align-items: center;
+      justify-content: center;
+      background-color: #6441A5;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      z-index: 21;
+    }
+
+    #twitch-embed-open:hover {
+      animation: openButtonAnimation 400ms ease-in-out;
+    }
+    
+    #twitch-embed-user {
+      position: absolute;
+      display: flex;
+      background-color: #0B0516;
+      border-top-left-radius: 26px;
+      border-bottom-left-radius: 26px;
+      height: 40px;
+      bottom: 15px;
+      right: 34px;
+      transform-origin: center right;
+      overflow: hidden;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      z-index: 20;
+    }
+
+    #twitch-embed-user-input {
+      margin: 4px;
+      border-radius: 22px;
+      border: 2px solid #402A6B;
+      padding: 10px;
+      background-color: #000000;
+      color: #FFFFFF;
+      width: 140px;
+      text-align: center;
+      font-size: 16px;
+    }
+
+    @keyframes userInputAnimationShow {
+      0% {
+        width: 10px;
+      }
+      70% {
+        width: 205px;
+      }
+      100% {
+        width: 200px;
+      }
+    }
+
+    @keyframes userInputAnimationHide {
+      0% {
+        width: 200px;
+      }
+      100% {
+        width: 10px;
+      }
+    }
+
+    .twitch-embed-user-initial {
+      width: 10px;
+    }
+
+    .twitch-embed-user-show {
+      width: 200px;
+      animation: userInputAnimationShow 200ms ease-in-out;
+    }
+
+    .twitch-embed-user-hide {
+      width: 10px;
+      animation: userInputAnimationHide 200ms ease-in-out;
+    }
+
+    #twitch-embed-container {
+      display: flex;
+      flex-direction: column;
+      position: absolute;
+      top: calc(100% - 380px);
+      left: calc(100% - 660px);
+      background-color: #000000;
+      border-radius: 10px;
+      overflow: hidden;
+      z-index: 100;
+      resize: both;
+      width: 640px;
+      height: 360px;
+      min-width: 322px;
+      min-height: 202px;
+      box-shadow: rgba(0, 0, 0, 0.35) 0px 5px 15px;
+      border: 1px solid #111111;
+      max-width: 100%;
+      max-height: 100%;
+    }
+
+    #twitch-embed-close {
+      position: absolute;
+      top: 0px;
+      right: 0px;
+      width: 40px;
+      height: 36px;
+      background-color: transparent;
+      font-size: 24px;
+      color: #FFFFFF;
+      z-index: 101;
+      border-radius: 10px;
+      text-align: center;
+      padding-left: 7px;
+    }
+
+    .twitch-embed-header-drag-true {
+      cursor: grab;
+    }
+
+    .twitch-embed-header-drag-false {
+      cursor: grabbing;
+    }
+
+    @keyframes headerAnimation {
+      0% {
+        background-position: 0 100%;
+      }
+      100% {
+        background-position: 0 0;
+      }
+    }
+
+    @keyframes headerAnimationHide {
+      0% {
+        background-position: 0 0;
+      }
+      100% {
+        background-position: 0 100%;
+      }
+    }
+
+    #twitch-embed-header {
+      display: flex;
+      position: absolute;
+      height: 40px;
+      width: 100%;
+      overflow: hidden;
+      cursor: grab;
+      z-index: 101;
+      background-size: 100% 200%;
+      background-image: linear-gradient(#000000DD, #00000000, #00000000);
+      animation: headerAnimationHide 200ms ease-in-out;
+      background-position: 0 100%;
+    }
+
+    #twitch-embed-header:hover {
+      background-image: linear-gradient(#000000DD, #00000000, #00000000);
+      animation: headerAnimation 200ms ease-in-out;
+      background-position: 0 0;
+    }
+
+    #twitch-embed-drag-overlay {
+      position: absolute;
+      top: 20px;
+      left: 0px;
+      height: 360px;
+      width: 640px;
+    }
+
+    #twitch-embed {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+    }
+
+    @keyframes popUpAnimation {
+      0% {
+        transform: scale(0.8);
+      }
+      60% {
+        transform: scale(1.02);
+      }
+      100% {
+        transform: scale(1);
+      }
+    }
+
+    .pop-up {
+      animation: popUpAnimation 300ms ease-in-out;
+    }
+
+    `;
+
+    const styleElement = document.createElement('style');
+    styleElement.innerHTML = style;
+    styleElement.id = 'twitch-embed-style';
+
+    const root = document.getElementById("app-mount");
+
+    root.append(styleElement);
   }
 
-  removeOpenAniamtionStyle() {
-    const style = document.getElementById('twitch-embed-open-animation-style');
+  removeStyleElement() {
+    const styleElement = document.getElementById("twitch-embed-style");
 
-    if (style) {
-      style.remove();
+    if (styleElement) {
+      styleElement.remove();
     }
-  }
-
-  resetableTimeout(key, func, timeMs) {
-    let previousTimeout = key in this.timeouts ? this.timeouts[key] : null;
-
-    if (previousTimeout) {
-      clearTimeout(previousTimeout)
-    }
-
-    this.timeouts[key] = setTimeout(func, timeMs);
   }
 
 };
